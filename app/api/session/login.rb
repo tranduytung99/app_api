@@ -1,18 +1,32 @@
+require 'doorkeeper/grape/helpers'
 module Session
   class Login < Grape::API
+
+    helpers Doorkeeper::Grape::Helpers
+    before do
+      doorkeeper_authorize!
+    end
+
     version 'v1', using: :path
     format :json
     rescue_from :all
 
     resource :index do
-      get :index_user do
+     get :index_user do
         User.all
      end
     end
 
     resource :detail do
-      get ':id', requirements: { id: /[0-9]*/ } do
+      get ':id' do
        User.find(params[:id])
+      end
+    end
+
+    resource :search do
+      get ':term' do
+        params[:term] !=nil ?  @user =  User.where("email like '%" +params[:term]+"%'") : error!({status_code: 500,
+          content: "Not Found user"}, 400)
       end
     end
 
@@ -36,10 +50,10 @@ module Session
         @user.destroy
       end
 
-      def user_params2
-      # params.require(:user).permit!
-       params.require(:user).permit!
-      end
+      # def user_params2
+      # # params.require(:user).permit!
+      #  params.require(:user).permit!
+      # end
 
       def user_params
         params_user = ActionController::Parameters.new({
